@@ -48,6 +48,60 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl wget git build-essential openssl screen
 ```
 
+### Step 1.1: Configure System Time Synchronization (CRITICAL)
+
+> [!CAUTION]
+> **Time synchronization is MANDATORY for validator operation.** Even 1-2 seconds of clock drift will cause block proposal failures, attestation misses, and inactivity penalties resulting in balance loss. 
+
+Install and configure NTP:
+
+```bash
+# Install NTP client
+sudo apt install -y ntpdate
+
+# Synchronize system time with NTP server
+sudo ntpdate -s time.nist.gov
+
+# Enable automatic time synchronization
+sudo systemctl start systemd-timesyncd
+sudo systemctl enable systemd-timesyncd
+```
+
+Verify time synchronization:
+
+```bash
+# Check current time with nanosecond precision
+date +"%Y-%m-%d %H:%M:%S.%N"
+
+# Verify NTP status
+timedatectl status
+```
+
+**Expected output:**
+- `System clock synchronized: yes`
+- `NTP service: active`
+
+**IMPORTANT:** If running on WSL2, you may need to manually sync time after system sleep/hibernation:
+
+```bash
+# Force immediate sync
+sudo hwclock -s
+sudo ntpdate -s time.nist.gov
+```
+
+**Verify synchronization with Main Node:**
+
+```bash
+# On validator node
+date +%s
+
+# On main node (SSH to 20.229.0.153)
+date +%s
+```
+
+Both timestamps must be identical (±1 second maximum tolerance).
+
+
 ### Step 2: Install Execution Client (Geth)
 
 Install the latest stable Geth version:
@@ -337,6 +391,40 @@ validator accounts list --wallet-dir=$HOME/zugchain-data/consensus/wallet
 ### Problem: Validator shows "DeadlineExceeded" errors
 
 **Solution:** Beacon node is not synced. Wait for beacon to reach `Synced to head of chain` status.
+
+### Problem: "Failed to propose block: could not process slot from the future"
+
+**Symptoms:**
+- Block proposals fail with timing errors
+- `correctlyVotedHead=false` and `correctlyVotedSource=false`
+- Inactivity score increasing
+- Balance decreasing instead of increasing
+
+**Root Cause:** System clock is not synchronized with network time (even 1-2 seconds drift causes failures).
+
+**Solution:**
+```bash
+# Stop all validator services
+screen -X -S validator_node quit
+screen -X -S beacon_node quit
+screen -X -S geth_node quit
+
+# Force time synchronization
+sudo hwclock -s
+sudo ntpdate -s time.nist.gov
+
+# Verify time accuracy
+timedatectl status
+
+# Restart services in order: geth → beacon → validator
+```
+
+If on WSL2 and issue persists:
+```powershell
+# On Windows PowerShell (Admin)
+wsl --shutdown
+# Then restart WSL and re-sync time
+```
 
 ### Problem: "Running on Ethereum Mainnet" warning during key import
 
