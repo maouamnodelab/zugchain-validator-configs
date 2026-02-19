@@ -105,9 +105,9 @@ Regardless of how you uploaded the files, you **must** run the import command. T
 **Run the Import Command:**
 ```bash
 /usr/local/bin/validator accounts import \
-    --keys-dir=~/zug_keys \
+    --keys-dir=$HOME/zug_keys \
     --wallet-dir=/opt/zugchain/data/validators \
-    --account-password-file=~/zug_keys/password.txt
+    --account-password-file=$HOME/zug_keys/password.txt
 ```
 
 **During this process:**
