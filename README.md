@@ -46,6 +46,28 @@ This repository is streamlined for validator operations only. Chain genesis and 
 
 Follow these steps to deploy your node and sync with the ZugChain network.
 
+### ⚠️ Critical Step: Network & Firewall Configuration
+
+Before installation, you **MUST** open the following ports on both your **Operating System Firewall** (e.g., UFW) and your **Cloud Provider's Firewall** (AWS Security Group, Vultr Firewall, etc.).
+
+Failure to open these ports will result in **zero peers** and the node will not sync.
+
+| Port | Protocol | Service | Purpose |
+| :--- | :--- | :--- | :--- |
+| **30303** | TCP & UDP | Execution (Geth) | P2P Peering (Required for Sync) |
+| **13000** | TCP | Consensus (Beacon) | P2P Peering (Required for Attestations) |
+| **12000** | UDP | Consensus (Beacon) | P2P Discovery (Required for Sync) |
+
+
+
+**Quick Setup (Ubuntu UFW):**
+```bash
+sudo ufw allow 30303
+sudo ufw allow 13000/tcp
+sudo ufw allow 12000/udp
+sudo ufw enable
+```
+
 
 
 ### Step 1: Clone the Repository
