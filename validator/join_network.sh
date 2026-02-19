@@ -9,83 +9,83 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# --- DİZİN YAPILANDIRMASI (YEREL) ---
+# --- DIRECTORY CONFIGURATION (LOCAL) ---
 ZUG_DIR="/opt/zugchain"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-# Script 'validator/' klasöründeyse, REPO_ROOT bir üst klasördür.
+# If script is in 'validator/' folder, REPO_ROOT is the parent folder.
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# --- GUNCEL AG BILGILERI (MASTER'DAN ALINAN) ---
-BOOTSTRAP_NODE="enr:-Mq4QPpJQUobFlSMEhThMxIP8V0ebubpPpvVwAx4I1Ivs8zSDimzaPADhmK6jnxynVqBARF3LsS1fsrAe5tmjA8UoUuGAZxxDbW0h2F0dG5ldHOIAABgAAAAAACEZXRoMpCBoWmuIAAABABMBgAAAAAAgmlkgnY0gmlwhGw9d8yEcXVpY4IyyIlzZWNwMjU2azGhAoK5g4shpHW3Fyay7kSXSKPNJ7o2M3nn9qzHHIFWXKcXiHN5bmNuZXRzD4N0Y3CCMsiDdWRwgi7g"
-BOOTNODE_ENODE="enode://224395d45815cb18e08ccb844cc9902c79094e58dd64f5fbb789066e56025d8501d04f4dc84c19cff52dbb210a3c6ae7a8db6a56577214234118591d9252a588@108.61.119.204:30303"
-# --- INTERAKTIF GIRDI ---
-echo -e "${GREEN}>>> ZUG Chain Validator Kurulumuna Hosgeldiniz.${NC}"
+# --- CURRENT NETWORK INFO (FROM MASTER) ---
+BOOTSTRAP_NODE="enr:-Mq4QPz8f64-dslTjXOCsSd3Bt0G_nQtyyV9CHmz38EgPHVSF7SJ64XGy54tMpLmrOi55dpg3qZGv4lBFBggOPv4KdGGAZx1hGLFh2F0dG5ldHOIAAAAAAwAAACEZXRoMpCBoWmuIAAABABMBgAAAAAAgmlkgnY0gmlwhBTlAJmEcXVpY4IyyIlzZWNwMjU2azGhAq2Rz_mwrG5IiWLrarg3VwKJo4oyWOJEkyh43fm7t_woiHN5bmNuZXRzD4N0Y3CCMsiDdWRwgi7g"
+BOOTNODE_ENODE="enode://ebf01cb7db4ede4320918fb2ad7e16a0a4d3f2229c68cb4f4b636b99e03d4a36405dfcd5567f43b6560e2d902cde9f0af8c6d0246f33c77ca35aead68aa1e42f@20.229.0.153:30303"
+# --- INTERACTIVE INPUT ---
+echo -e "${GREEN}>>> Welcome to ZUG Chain Validator Installation.${NC}"
 echo ""
-echo -e "${YELLOW}>>> Lutfen Blok Odullerinin (Fee Recipient) yatacagi cuzdan adresini girin:${NC}"
-read -p "Cuzdan Adresi [Varsayilan: 0x98CE9...]: " USER_FEE_RECIPIENT
+echo -e "${YELLOW}>>> Please enter the wallet address to receive Block Rewards (Fee Recipient):${NC}"
+read -p "Wallet Address [Default: 0x98CE9...]: " USER_FEE_RECIPIENT
 
-# Kullanıcı boş bırakırsa varsayılan adresi ata
+# Assign default address if user leaves it empty
 FEE_RECIPIENT=${USER_FEE_RECIPIENT:-"0x98CE9a541aFCfCa53804702F9d273FE1bB653eA9"}
-echo -e "${GREEN}>>> Secilen Cuzdan: ${FEE_RECIPIENT}${NC}"
+echo -e "${GREEN}>>> Selected Wallet: ${FEE_RECIPIENT}${NC}"
 echo ""
 
 PUBLIC_IP=$(curl -s ifconfig.me)
 
-echo -e "${GREEN}>>> ZUG Chain Validator (Smart Install) Basliyor...${NC}"
+echo -e "${GREEN}>>> ZUG Chain Validator (Smart Install) Starting...${NC}"
 
-# --- 1. MIMARI ALGILAMA ---
+# --- 1. ARCHITECTURE DETECTION ---
 ARCH=$(uname -m)
 if [[ "$ARCH" == "x86_64" ]]; then
     ARCH_DIR="x86"
 elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     ARCH_DIR="arm64"
 else
-    echo -e "${RED}HATA: Desteklenmeyen mimari: $ARCH${NC}"
+    echo -e "${RED}ERROR: Unsupported architecture: $ARCH${NC}"
     exit 1
 fi
-echo -e "${GREEN}>>> Mimari: $ARCH ($ARCH_DIR)${NC}"
+echo -e "${GREEN}>>> Architecture: $ARCH ($ARCH_DIR)${NC}"
 
-# --- 2. TEMIZLIK ---
-echo -e "${YELLOW}>>> Eski veriler temizleniyor...${NC}"
+# --- 2. CLEANUP ---
+echo -e "${YELLOW}>>> Cleaning up old data...${NC}"
 systemctl stop zugchain-* 2>/dev/null || true
 rm -rf ${ZUG_DIR}/config ${ZUG_DIR}/data
 mkdir -p ${ZUG_DIR}/{data,config,logs}
 mkdir -p ${ZUG_DIR}/data/{geth,beacon,validators}
 
-# --- 3. YEREL DOSYA KONTROLÜ VE KOPYALAMA ---
-# Binaryler ana dizindeki bin/ klasöründen alınır
+# --- 3. LOCAL FILE CHECK AND COPY ---
+# Binaries are taken from the bin/ folder in the root directory
 BIN_SOURCE="${REPO_ROOT}/bin/${ARCH_DIR}"
-# Configler scriptin yanındaki config/ klasöründen alınır
+# Configs are taken from the config/ folder next to the script
 CONFIG_SOURCE="${SCRIPT_DIR}/config"
 
-echo -e "${GREEN}>>> Dosyalar yerel repo klasörlerinden kopyalanıyor...${NC}"
+echo -e "${GREEN}>>> Copying files from local repository folders...${NC}"
 
-# Binary Kontrolü
+# Binary Check
 if [ ! -f "$BIN_SOURCE/beacon-chain" ]; then
-    echo -e "${RED}HATA: Binary bulunamadı: $BIN_SOURCE/beacon-chain${NC}"
+    echo -e "${RED}ERROR: Binary not found: $BIN_SOURCE/beacon-chain${NC}"
     exit 1
 fi
 
-# Kopyala (Yerelden Sisteme)
+# Copy (From Local to System)
 cp -f "$BIN_SOURCE/beacon-chain" /usr/local/bin/
 cp -f "$BIN_SOURCE/validator" /usr/local/bin/
 chmod +x /usr/local/bin/beacon-chain /usr/local/bin/validator
 
-# Config Kopyala (Yerelden /opt/zugchain'e)
+# Copy Config (From Local to /opt/zugchain)
 if [ -d "$CONFIG_SOURCE" ]; then
     cp -f "$CONFIG_SOURCE"/* "${ZUG_DIR}/config/"
 else
-    echo -e "${RED}HATA: Config klasörü bulunamadı: $CONFIG_SOURCE${NC}"
+    echo -e "${RED}ERROR: Config folder not found: $CONFIG_SOURCE${NC}"
     exit 1
 fi
 
-# --- 4. AYARLAR VE INIT ---
+# --- 4. SETTINGS AND INIT ---
 openssl rand -hex 32 > ${ZUG_DIR}/data/jwt.hex
 chmod 600 ${ZUG_DIR}/data/jwt.hex
 geth init --datadir "${ZUG_DIR}/data/geth" --state.scheme=path "${ZUG_DIR}/config/genesis.json"
 
-# --- 5. SERVISLER (SYSTEMD) ---
-# (Buradaki servis blokları senin v5.0 stabilite ayarlarınla aynıdır)
+# --- 5. SERVICES (SYSTEMD) ---
+# (Service blocks here are the same as your v5.0 stability settings)
 
 # Geth
 cat > /etc/systemd/system/zugchain-geth.service <<EOF
@@ -161,5 +161,5 @@ systemctl start zugchain-geth
 sleep 5
 systemctl start zugchain-beacon
 
-echo -e "${GREEN}>>> ZUG Chain Validator Basariyla Kuruldu!${NC}"
-echo -e "${YELLOW}>>> Artik 'git clone' döngüsünden kurtulduk, yerel repo kullanılıyor.${NC}"
+echo -e "${GREEN}>>> ZUG Chain Validator Successfully Installed!${NC}"
+echo -e "${YELLOW}>>> Setup complete using local repository.${NC}"
