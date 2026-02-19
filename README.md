@@ -1,503 +1,195 @@
-# ZugChain Validator Node - Manual Installation Guide
+# ⚡ ZUG CHAIN - Enterprise Blockchain Deployment Suite (v8.0)
 
-## Overview
+**ZUG Chain**, Ethereum tabanlı (EVM), Proof-of-Stake (PoS) konsensüs mekanizmasına sahip, yüksek performanslı ve özelleştirilmiş bir blokzincir ağıdır. Bu depo (repository), ağın sıfırdan kurulumu (Master Node) ve ağa katılım (Validator Node) süreçlerini otomatize eden araçları içerir.
 
-This repository contains the official configuration files required to set up a ZugChain validator node. This guide provides step-by-step instructions for manual installation and operation of a validator node, following Ethereum best practices.
-
-**Network Information:**
-- **Network ID:** 824642
-- **Chain Name:** ZugChain
-- **Consensus:** Proof of Stake (PoS)
-- **Staking Requirement:** 32,000 ZUG per validator
-- **Main Node RPC:** `http://20.229.0.153:8545`
-- **Checkpoint Sync:** `http://20.229.0.153:3500`
+Bu yapı **Otomatik Mimari Algılama (Auto-Architecture Detection)** özelliğine sahiptir. Scriptler, sunucunuzun **x86_64** (Intel/AMD) veya **ARM64** olduğunu algılar ve `bin/` klasöründen doğru dosyaları otomatik kullanır.
 
 ---
 
-## Prerequisites
-
-### System Requirements
-- **Operating System:** Ubuntu 20.04 LTS or 22.04 LTS (WSL2 supported)
-- **CPU:** 4+ cores
-- **RAM:** 16 GB minimum, 32 GB recommended
-- **Storage:** 500 GB SSD minimum
-- **Network:** Stable internet connection with open ports
-
-### Required Software
-- `curl`, `wget`, `git`
-- `openssl` for JWT secret generation
-- `screen` or `tmux` for session management
-- Go 1.21+ (installed automatically with Geth)
-
-### Firewall Configuration
-Ensure the following ports are open:
-- **30303 (TCP/UDP):** Geth P2P
-- **13000 (TCP):** Beacon P2P
-- **12000 (UDP):** Beacon discovery
+## 📋 İçindekiler
+1. [Sistem Gereksinimleri](#-sistem-gereksinimleri)
+2. [Repo Mimarisi](#-repo-mimarisi)
+3. [Rolünüzü Seçin](#-rolünüzü-seçin)
+4. [Bölüm 1: Master Node Kurulumu](#-bölüm-1-master-node-kurulumu-sadece-yönetici)
+5. [Bölüm 2: Validator Kurulumu](#-bölüm-2-validator-kurulumu-ağa-katılım)
+6. [Operasyon ve Yönetim](#-operasyon-ve-yönetim)
+7. [Sorun Giderme](#-sorun-giderme)
 
 ---
 
-## Installation Steps
+## 🖥️ Sistem Gereksinimleri
 
-### Step 1: System Preparation
+ZUG Chain, yüksek performanslı bir ağdır. Stabilite için aşağıdaki donanım özellikleri önerilir:
 
-Update your system and install dependencies:
+| Donanım | Minimum | Önerilen (Prodüksiyon) |
+| :--- | :--- | :--- |
+| **CPU** | 4 Çekirdek | 8 Çekirdek (AMD Ryzen / Intel Xeon / Apple M-Series) |
+| **RAM** | 16 GB | 32 GB+ |
+| **Disk** | 500 GB SSD | 2 TB NVMe SSD |
+| **OS** | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
+| **Network** | 100 Mbps | 1 Gbps Fiber (Statik IP Şart) |
+
+---
+
+## 📂 Repo Mimarisi
+
+* **`chain/`**: Master Node (Zincirin ilk halkası) kurulum dosyaları.
+* **`validator/`**: Ağa sonradan katılacak node'lar için kurulum dosyaları.
+* **`bin/`**: Mimariye özel derlenmiş binary dosyaları (`geth`, `beacon-chain`, `validator`).
+    * `bin/x86`: Intel/AMD işlemciler için.
+    * `bin/arm64`: ARM (Mac M1/M2, AWS Graviton vb.) işlemciler için.
+* **`config/`**: Genesis ve ağ konfigürasyon dosyalarının saklandığı alan.
+
+---
+
+## 🎭 Rolünüzü Seçin
+
+Kuruluma başlamadan önce rolünüzü belirleyin:
+
+1.  **MASTER NODE (Yönetici):** Zinciri sıfırdan kuracak, genesis bloğunu oluşturacak ve token ekonomisini başlatacak kişidir. **(Sadece 1 kişi yapar).**
+2.  **VALIDATOR NODE (Katılımcı):** Var olan, çalışan bir ağa bağlanarak validatör (onaylayıcı) olmak isteyen kişidir.
+
+---
+
+## 🚀 BÖLÜM 1: Master Node Kurulumu (Sadece Yönetici)
+
+Bu adımlar, zinciri **İLK KEZ** başlatacak olan yönetici içindir.
+
+### Adım 1: Repoyu İndirin ve Hazırlayın
+*(Not: `KULLANICI_ADI` kısmını kendi GitHub kullanıcı adınızla değiştirin)*
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl wget git build-essential openssl screen
+git clone https://github.com/KULLANICI_ADI/zugchain-repo.git
+cd zugchain-repo/chain
+chmod +x setup_chain.sh
 ```
 
-### Step 1.1: Configure System Time Synchronization (CRITICAL)
-
-> [!CAUTION]
-> **Time synchronization is MANDATORY for validator operation.** Even 1-2 seconds of clock drift will cause block proposal failures, attestation misses, and inactivity penalties resulting in balance loss. 
-
-Install and configure NTP:
+### Adım 2: Kurulumu Başlatın
+Script interaktiftir. Size validator sayısı, SSL domaini gibi sorular soracaktır.
 
 ```bash
-# Install NTP client
-sudo apt install -y ntpdate
-
-# Synchronize system time with NTP server
-sudo ntpdate -s time.nist.gov
-
-# Enable automatic time synchronization
-sudo systemctl start systemd-timesyncd
-sudo systemctl enable systemd-timesyncd
+sudo ./setup_chain.sh
 ```
 
-Verify time synchronization:
+### Adım 3: 🚨 KRİTİK - Konfigürasyon Dağıtımı
+Zincir kurulduktan sonra oluşan `genesis.json`, `config.yml` ve `genesis.ssz` dosyaları, diğer insanların ağa bağlanabilmesi için hayati önem taşır. Bu dosyaları repoya yüklemelisiniz:
 
 ```bash
-# Check current time with nanosecond precision
-date +"%Y-%m-%d %H:%M:%S.%N"
+# 1. Dosyaları validator klasörüne kopyalayın
+cp /opt/zugchain/config/genesis.json ../validator/config/
+cp /opt/zugchain/config/config.yml ../validator/config/
+cp /opt/zugchain/config/genesis.ssz ../validator/config/
 
-# Verify NTP status
-timedatectl status
+# 2. Değişiklikleri GitHub'a gönderin
+cd ..
+git add .
+git commit -m "Genesis Configs Update for New Chain Launch"
+git push origin main
+```
+> **Uyarı:** Bu adım yapılmazsa, Validator scriptleri çalışmayacaktır!
+
+---
+
+## 🔗 BÖLÜM 2: Validator Kurulumu (Ağa Katılım)
+
+Mevcut çalışan ZUG Chain ağına bağlanmak isteyenler bu adımları izlemelidir.
+
+### Ön Hazırlık (Gerekli Bilgiler)
+Kuruluma başlamadan önce Master Node Sahibinden aşağıdaki bilgileri talep edin. Script kurulum sırasında bunları soracaktır:
+
+*   **Master Node IP Adresi:** (Örn: `108.61.119.204`)
+*   **Bootnode ENODE:** (`enode://...` ile başlayan uzun kod)
+*   **Bootstrap ENR:** (`enr:-...` ile başlayan kod)
+
+### Adım 1: Repoyu İndirin
+
+```bash
+git clone https://github.com/KULLANICI_ADI/zugchain-repo.git
+cd zugchain-repo/validator
+chmod +x join_network.sh
 ```
 
-**Expected output:**
-- `System clock synchronized: yes`
-- `NTP service: active`
-
-**WSL2 Clock Drift Warning:**
-
-> [!NOTE]
-> **Why WSL2 Requires Extra Attention**
-> 
-> WSL2 runs as a Hyper-V virtual machine with its own clock. Clock drift is **more common** on WSL2 because:
-> - **Windows Hibernation/Sleep:** When Windows resumes from sleep, WSL clock may freeze while Windows clock auto-corrects
-> - **VM Clock Skew:** Virtual machine clocks can drift from host system over time
-> - **Manual Sync Required:** Unlike native Linux, WSL doesn't always auto-sync after resume
-> 
-> **Native Linux** is less prone to this issue (systemd-timesyncd runs automatically), but can still experience drift in virtualized environments (VMware, VirtualBox) or if BIOS time is incorrect.
-
-If running on WSL2, manually sync time after system sleep/hibernation:
+### Adım 2: Kurulumu Başlatın
+Script, işlemci mimarinizi otomatik algılar ve Master Node'a bağlanmak için gerekli ayarları yapar.
 
 ```bash
-# Force immediate sync (run after Windows resume from sleep)
-sudo hwclock -s
-sudo ntpdate -s time.nist.gov
+sudo ./join_network.sh
 ```
 
-**Verify synchronization with Main Node:**
+### Adım 3: Cüzdan Import (Validator Aktivasyonu)
+Node kurulduktan sonra, validatör cüzdan dosyalarınızı (`keystores`) sunucuya yükleyin (örneğin SFTP ile) ve aşağıdaki komutla içe aktarın:
 
 ```bash
-# On validator node
-date +%s
+# Örnek Kullanım
+/usr/local/bin/validator accounts import \
+    --keys-dir=/home/kullanici/validator_keys \
+    --wallet-dir=/opt/zugchain/data/validators
 
-# On main node (SSH to 20.229.0.153)
-date +%s
+# Parola soracaktır, cüzdan parolanızı girin.
 ```
 
-Both timestamps must be identical (±1 second maximum tolerance).
-
-
-### Step 2: Install Execution Client (Geth)
-
-Install the latest stable Geth version:
+### Adım 4: Servisi Başlatın
+Cüzdan import işlemi başarıyla tamamlandıktan sonra validatör servisini başlatın:
 
 ```bash
-sudo add-apt-repository -y ppa:ethereum/ethereum
-sudo apt update
-sudo apt install -y ethereum
-```
-
-Verify installation:
-```bash
-geth version
-```
-
-### Step 3: Install Consensus Client (Prysm)
-
-Download and install Prysm binaries:
-
-```bash
-mkdir -p ~/prysm && cd ~/prysm
-
-# Download Validator and Beacon binaries
-curl -LO https://github.com/prysmaticlabs/prysm/releases/download/v5.3.0/validator-v5.3.0-linux-amd64
-curl -LO https://github.com/prysmaticlabs/prysm/releases/download/v5.3.0/beacon-chain-v5.3.0-linux-amd64
-
-# Make executable and move to system path
-chmod +x validator-v5.3.0-linux-amd64 beacon-chain-v5.3.0-linux-amd64
-sudo mv validator-v5.3.0-linux-amd64 /usr/local/bin/validator
-sudo mv beacon-chain-v5.3.0-linux-amd64 /usr/local/bin/beacon-chain
-```
-
-Verify installation:
-```bash
-validator --version
-beacon-chain --version
+sudo systemctl start zugchain-validator
 ```
 
 ---
 
-## Configuration
+## 🛠 Operasyon ve Yönetim
+Node yönetimi için aşağıdaki komutları kullanabilirsiniz.
 
-### Step 4: Set Up Directory Structure
-
-Create the standard directory layout:
+### Servis Durumlarını Kontrol Etme
 
 ```bash
-cd ~
-mkdir -p ~/zugchain-data/{consensus,execution,secrets,config}
-mkdir -p ~/zugchain-data/consensus/wallet
+# Execution Layer (Geth - Blok İşleme)
+systemctl status zugchain-geth
+
+# Consensus Layer (Beacon Chain - P2P ve Senkronizasyon)
+systemctl status zugchain-beacon
+
+# Validator Client (Onaylama ve İmza)
+systemctl status zugchain-validator
 ```
 
-### Step 5: Download Configuration Files
-
-Clone this repository and copy configuration files:
+### Logları İzleme (Hata Ayıklama)
 
 ```bash
-git clone https://github.com/ZugChainLabs/zugchain-validator-configs.git
-cd zugchain-validator-configs
+# Geth Logları (Canlı Akış)
+journalctl -fu zugchain-geth
 
-# Copy configurations
-cp genesis.json ~/zugchain-data/config/
-cp config.yml ~/zugchain-data/config/
-cp genesis.ssz ~/zugchain-data/config/
+# Beacon Logları (Peer sayısı, senkronizasyon vb.)
+journalctl -fu zugchain-beacon
+
+# Validator Logları (Ödül, Attestation vb.)
+journalctl -fu zugchain-validator
 ```
 
-### Step 6: Generate JWT Secret
-
-The JWT secret enables secure communication between Geth and Prysm:
+### Servisleri Durdurma/Yeniden Başlatma
 
 ```bash
-openssl rand -hex 32 | tr -d "\n" > ~/zugchain-data/secrets/jwt.hex
-```
+# Hepsini durdur
+sudo systemctl stop zugchain-geth zugchain-beacon zugchain-validator
 
-### Step 7: Initialize Execution Layer
-
-Initialize Geth with the ZugChain genesis configuration:
-
-```bash
-geth init --datadir=~/zugchain-data/execution ~/zugchain-data/config/genesis.json
-```
-
-Expected output: `Successfully wrote genesis state`
-
----
-
-## Validator Key Management
-
-### Step 8: Generate or Import Validator Keys
-
-**Option A: Generate New Keys (Recommended for New Validators)**
-
-Use the official Ethereum deposit CLI:
-
-```bash
-# Download deposit CLI
-wget https://github.com/ethereum/staking-deposit-cli/releases/download/v2.7.0/staking_deposit-cli-fdab65d-linux-amd64.tar.gz
-tar -xvf staking_deposit-cli-fdab65d-linux-amd64.tar.gz
-cd staking_deposit-cli-*
-
-# Generate keys
-./deposit new-mnemonic --num_validators=1 --chain=zugchain
-```
-
-**Option B: Import Existing Keys**
-
-If you already have validator keystores, place them in `~/validator_keys/`.
-
-### Step 9: Import Keys into Prysm Wallet
-
-```bash
-validator accounts import \
-  --keys-dir=$HOME/validator_keys \
-  --wallet-dir=$HOME/zugchain-data/consensus/wallet
-```
-
-You will be prompted to:
-1. Accept Prysm Terms of Service (`accept`)
-2. Create a wallet password (minimum 8 characters)
-3. Enter your keystore password
-
----
-
-## Running the Validator Node
-
-### Step 10: Start Execution Client (Geth)
-
-Open a new screen session:
-
-```bash
-screen -S geth_node
-```
-
-Run Geth:
-
-```bash
-geth \
-  --networkid=824642 \
-  --datadir=$HOME/zugchain-data/execution \
-  --http --http.api=eth,net,web3,engine,admin \
-  --http.addr=0.0.0.0 --http.vhosts=* --http.corsdomain=* \
-  --authrpc.addr=127.0.0.1 --authrpc.port=8551 --authrpc.vhosts=* \
-  --authrpc.jwtsecret=$HOME/zugchain-data/secrets/jwt.hex \
-  --bootnodes="enode://50ab841049b54f70874c6be9100e7a3d0e91329dda27cf09cecc4143b409d1c69d5787c885cf2735037ceda84b79998dfa52ce093a2a3dfec5dec4781dd50c8e@20.229.0.153:30303" \
-  --syncmode=full \
-  --verbosity=3
-```
-
-**Expected logs:**
-- `Looking for peers peercount=1` (connection to main node established)
-
-Detach from screen: `Ctrl+A`, then `D`
-
-### Step 11: Start Consensus Client (Beacon Chain)
-
-Open a new screen session:
-
-```bash
-screen -S beacon_node
-```
-
-Run Beacon Chain with checkpoint sync:
-
-```bash
-beacon-chain \
-  --datadir=$HOME/zugchain-data/consensus \
-  --chain-config-file=$HOME/zugchain-data/config/config.yml \
-  --genesis-state=$HOME/zugchain-data/config/genesis.ssz \
-  --execution-endpoint=http://127.0.0.1:8551 \
-  --jwt-secret=$HOME/zugchain-data/secrets/jwt.hex \
-  --p2p-tcp-port=13000 --p2p-udp-port=12000 \
-  --min-sync-peers=0 \
-  --bootstrap-node="enr:-Mq4QH3lH6OeuOM4DLIUjmF74N5zJbJUlXrbNiwX_qn0jditVTM8QdC7V0rshBY4fJUAm6f55J7KF2qVc6DpQ4MzVNiGAZxFLtW6h2F0dG5ldHOIAAAAAAAABgCEZXRoMpCBoWmuIAAABf__________gmlkgnY0gmlwhBTlAJmEcXVpY4IyyIlzZWNwMjU2azGhAzGPnxoCHYFpsbXFMplsnbjhvmNw_jmxiMt04N_hXAdwiHN5bmNuZXRzD4N0Y3CCMsiDdWRwgi7g" \
-  --checkpoint-sync-url=http://20.229.0.153:3500 \
-  --genesis-beacon-api-url=http://20.229.0.153:3500 \
-  --accept-terms-of-use
-```
-
-**Expected logs:**
-- `Synced to head of chain` (full sync achieved)
-- `Synced new block slot=XXX` (receiving blocks)
-
-Detach from screen: `Ctrl+A`, then `D`
-
-### Step 12: Start Validator Client
-
-Open a new screen session:
-
-```bash
-screen -S validator_node
-```
-
-Run the validator:
-
-> [!WARNING]
-> **CRITICAL: Configure Fee Recipient Address**
-> 
-> Without `--suggested-fee-recipient`, all block proposal rewards (transaction fees and MEV) will be sent to the **burn address (0x0000...0000)** and permanently lost. This parameter is separate from your withdrawal credentials.
-> 
-> - **Withdrawal Credentials:** Set during key generation (used when exiting validator)
-> - **Fee Recipient:** Set at runtime (receives block proposal rewards)
-
-```bash
-validator \
-  --datadir=$HOME/zugchain-data/consensus \
-  --wallet-dir=$HOME/zugchain-data/consensus/wallet \
-  --chain-config-file=$HOME/zugchain-data/config/config.yml \
-  --beacon-rpc-provider=127.0.0.1:4000 \
-  --suggested-fee-recipient=0x1b4e99d2a838ee7b524f47a399c34af43a8fad80 \
-  --accept-terms-of-use
-```
-
-**Replace `0x1b4e99d2a838ee7b524f47a399c34af43a8fad80` with your own wallet address.**
-
-Enter your wallet password when prompted.
-
-**Expected logs:**
-- `Validator activated` (your validator is recognized)
-- `Attestation sent` (actively participating in consensus)
-
-Detach from screen: `Ctrl+A`, then `D`
-
----
-
-## Monitoring and Management
-
-### Screen Session Management
-
-View all running screens:
-```bash
-screen -ls
-```
-
-Reattach to a screen:
-```bash
-screen -r geth_node      # Geth logs
-screen -r beacon_node    # Beacon logs
-screen -r validator_node # Validator logs
-```
-
-Terminate a screen session:
-```bash
-screen -X -S geth_node quit
-```
-
-### Health Checks
-
-**Check Geth peers:**
-```bash
-geth attach http://localhost:8545 --exec 'admin.peers.length'
-```
-
-**Check Beacon sync status:**
-```bash
-curl -s http://localhost:3500/eth/v1/node/syncing | jq
-```
-
-**View validator status:**
-```bash
-validator accounts list --wallet-dir=$HOME/zugchain-data/consensus/wallet
+# Hepsini yeniden başlat
+sudo systemctl restart zugchain-geth zugchain-beacon zugchain-validator
 ```
 
 ---
 
-## Security Best Practices
+## ❓ Sorun Giderme
 
-1. **Backup Critical Files:**
-   - Mnemonic phrase (offline, secure storage)
-   - Validator keystores (`~/validator_keys/`)
-   - Wallet password (encrypted password manager)
+### 1. "Peer Sayısı 0 Görünüyor"
+*   Portların açık olduğundan emin olun: `30303` (TCP/UDP), `13000` (TCP), `12000` (UDP).
+*   Master Node'un `BOOTNODE_ENODE` adresinin doğru girildiğini kontrol edin.
+*   Zaman senkronizasyonunu kontrol edin: `sudo timedatectl set-ntp on`.
 
-2. **Firewall Configuration:**
-   - Only expose P2P ports (30303, 13000, 12000)
-   - Block RPC access from external networks
+### 2. "Genesis Hash Mismatch" Hatası
+*   Master Node sahibi config dosyalarını güncellememiş olabilir. Repoyu silip (`rm -rf zugchain-repo`) yeniden çekin (`git clone`).
 
-3. **System Hardening:**
-   - Keep system packages updated
-   - Use SSH key authentication only
-   - Enable UFW or iptables firewall
+### 3. "Permission Denied" Hatası
+*   Scriptleri `sudo` ile çalıştırdığınızdan emin olun.
 
-4. **Monitoring:**
-   - Set up alerting for validator downtime
-   - Monitor disk space and CPU usage
-   - Track attestation performance
-
----
-
-## Troubleshooting
-
-### Problem: Geth shows "Looking for peers" but peercount=0
-
-**Solution:** Verify firewall rules allow port 30303 (TCP/UDP). Check that the main node (20.229.0.153) is reachable.
-
-### Problem: Beacon shows "Waiting for suitable peers"
-
-**Solution:** Ensure port 13000 (TCP) and 12000 (UDP) are open. Verify the ENR bootstrap node is accessible.
-
-### Problem: Validator shows "DeadlineExceeded" errors
-
-**Solution:** Beacon node is not synced. Wait for beacon to reach `Synced to head of chain` status.
-
-### Problem: "Failed to propose block: could not process slot from the future"
-
-**Symptoms:**
-- Block proposals fail with timing errors
-- `correctlyVotedHead=false` and `correctlyVotedSource=false`
-- Inactivity score increasing
-- Balance decreasing instead of increasing
-
-**Root Cause:** System clock is not synchronized with network time (even 1-2 seconds drift causes failures).
-
-**Solution:**
-```bash
-# Stop all validator services
-screen -X -S validator_node quit
-screen -X -S beacon_node quit
-screen -X -S geth_node quit
-
-# Force time synchronization
-sudo hwclock -s
-sudo ntpdate -s time.nist.gov
-
-# Verify time accuracy
-timedatectl status
-
-# Restart services in order: geth → beacon → validator
-```
-
-If on WSL2 and issue persists:
-```powershell
-# On Windows PowerShell (Admin)
-wsl --shutdown
-# Then restart WSL and re-sync time
-```
-
-### Problem: "fee recipient is the burn address" warning in logs
-
-**Symptoms:**
-- Repeated warnings: `WARN rpc/validator: fee recipient is the burn address`
-- Block proposal rewards are being lost
-
-**Root Cause:** Validator was started without `--suggested-fee-recipient` parameter.
-
-**Solution:**
-```bash
-# Stop validator
-screen -X -S validator_node quit
-
-# Restart with fee recipient configured
-screen -S validator_node
-validator \
-  --datadir=$HOME/zugchain-data/consensus \
-  --wallet-dir=$HOME/zugchain-data/consensus/wallet \
-  --chain-config-file=$HOME/zugchain-data/config/config.yml \
-  --beacon-rpc-provider=127.0.0.1:4000 \
-  --suggested-fee-recipient=YOUR_WALLET_ADDRESS \
-  --accept-terms-of-use
-```
-
-Replace `YOUR_WALLET_ADDRESS` with your actual Ethereum address (same address you used during key generation).
-
-### Problem: "Running on Ethereum Mainnet" warning during key import
-
-**Solution:** This is a cosmetic warning from Prysm. The actual network is determined by `config.yml` during node runtime, not during key import.
-
----
-
-## Support and Community
-
-- **GitHub Issues:** [ZugChainLabs/zugchain-validator-configs](https://github.com/ZugChainLabs/zugchain-validator-configs/issues)
-- **Documentation:** [docs.zugchain.org](https://docs.zugchain.org)
-- **Discord:** [discord.gg/zugchain](https://discord.gg/zugchain)
-
----
-
-## License
-
-This repository is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgments
-
-Built on top of:
-- [Geth](https://github.com/ethereum/go-ethereum)
-- [Prysm](https://github.com/prysmaticlabs/prysm)
-- Ethereum Foundation specifications
+### 4. Validator "Waiting for beacon chain" diyor
+*   Beacon Chain henüz senkronize olmamış olabilir. `journalctl -fu zugchain-beacon` ile senkronizasyon durumunu kontrol edin. Beacon hazır olduğunda validator otomatik başlayacaktır.
