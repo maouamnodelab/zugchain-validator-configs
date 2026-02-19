@@ -1,135 +1,102 @@
-# ⚡ ZUG CHAIN - Enterprise Blockchain Deployment Suite (v8.0)
+# ⚡ ZugChain Validator Deployment Suite (Enterprise Edition)
 
-**ZUG Chain**, Ethereum tabanlı (EVM), Proof-of-Stake (PoS) konsensüs mekanizmasına sahip, yüksek performanslı ve özelleştirilmiş bir blokzincir ağıdır. Bu depo (repository), ağın sıfırdan kurulumu (Master Node) ve ağa katılım (Validator Node) süreçlerini otomatize eden araçları içerir.
+**ZugChain** is a high-performance, EVM-compatible Proof-of-Stake (PoS) blockchain designed for institutional-grade reliability and scalability. This repository provides the essential binaries, configurations, and automated deployment tools required to join the ZugChain network as a **Validator Node**.
 
-Bu yapı **Otomatik Mimari Algılama (Auto-Architecture Detection)** özelliğine sahiptir. Scriptler, sunucunuzun **x86_64** (Intel/AMD) veya **ARM64** olduğunu algılar ve `bin/` klasöründen doğru dosyaları otomatik kullanır.
-
----
-
-## 📋 İçindekiler
-1. [Sistem Gereksinimleri](#-sistem-gereksinimleri)
-2. [Repo Mimarisi](#-repo-mimarisi)
-3. [Rolünüzü Seçin](#-rolünüzü-seçin)
-4. [Bölüm 1: Master Node Kurulumu](#-bölüm-1-master-node-kurulumu-sadece-yönetici)
-5. [Bölüm 2: Validator Kurulumu](#-bölüm-2-validator-kurulumu-ağa-katılım)
-6. [Operasyon ve Yönetim](#-operasyon-ve-yönetim)
-7. [Sorun Giderme](#-sorun-giderme)
+This suite features **Auto-Architecture Detection**, ensuring seamless deployment on both **x86_64** (Intel/AMD) and **ARM64** (Apple Silicon, AWS Graviton) infrastructures by automatically utilizing the appropriate optimized binaries.
 
 ---
 
-## 🖥️ Sistem Gereksinimleri
+## 📋 Table of Contents
+1. [System Requirements](#-system-requirements)
+2. [Repository Architecture](#-repository-architecture)
+3. [Validator Setup Guide](#-validator-setup-guide)
+4. [Key Management & Activation](#-key-management--activation)
+5. [Operations & Monitoring](#-operations--monitoring)
+6. [Troubleshooting](#-troubleshooting)
 
-ZUG Chain, yüksek performanslı bir ağdır. Stabilite için aşağıdaki donanım özellikleri önerilir:
+---
 
-| Donanım | Minimum | Önerilen (Prodüksiyon) |
+## 🖥️ System Requirements
+
+Ideally suited for high-availability environments, ZugChain validators require robust hardware to ensure network stability and maximize uptime rewards.
+
+| Component | Minimum Specification | Recommended (Production) |
 | :--- | :--- | :--- |
-| **CPU** | 4 Çekirdek | 8 Çekirdek (AMD Ryzen / Intel Xeon / Apple M-Series) |
-| **RAM** | 16 GB | 32 GB+ |
-| **Disk** | 500 GB SSD | 2 TB NVMe SSD |
+| **CPU** | 4 Cores | 8 Cores (AMD Ryzen 7000+ / Intel Xeon / Apple M-Series) |
+| **RAM** | 16 GB | 32 GB+ DDR5 |
+| **Storage** | 500 GB SSD | 2 TB NVMe SSD (High IOPS required) |
 | **OS** | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
-| **Network** | 100 Mbps | 1 Gbps Fiber (Statik IP Şart) |
+| **Network** | 100 Mbps Up/Down | 1 Gbps Fiber (Static IP Required) |
 
 ---
 
-## 📂 Repo Mimarisi
+## 📂 Repository Architecture
 
-* **`chain/`**: Master Node (Zincirin ilk halkası) kurulum dosyaları.
-* **`validator/`**: Ağa sonradan katılacak node'lar için kurulum dosyaları.
-* **`bin/`**: Mimariye özel derlenmiş binary dosyaları (`geth`, `beacon-chain`, `validator`).
-    * `bin/x86`: Intel/AMD işlemciler için.
-    * `bin/arm64`: ARM (Mac M1/M2, AWS Graviton vb.) işlemciler için.
-* **`config/`**: Genesis ve ağ konfigürasyon dosyalarının saklandığı alan.
+This repository is streamlined for validator operations only. Chain genesis and master node configurations are managed upstream.
 
----
-
-## 🎭 Rolünüzü Seçin
-
-Kuruluma başlamadan önce rolünüzü belirleyin:
-
-1.  **MASTER NODE (Yönetici):** Zinciri sıfırdan kuracak, genesis bloğunu oluşturacak ve token ekonomisini başlatacak kişidir. **(Sadece 1 kişi yapar).**
-2.  **VALIDATOR NODE (Katılımcı):** Var olan, çalışan bir ağa bağlanarak validatör (onaylayıcı) olmak isteyen kişidir.
+* **`validator/`**: Scripts and configuration templates for node deployment.
+* **`bin/`**: Pre-compiled, optimized core binaries (`geth`, `beacon-chain`, `validator`).
+    * `bin/x86`: For standard Intel/AMD servers.
+    * `bin/arm64`: For ARM-based infrastructure.
+* **`config/`**: Network genesis and consensus configuration files.
 
 ---
 
-## 🚀 BÖLÜM 1: Master Node Kurulumu (Sadece Yönetici)
+## 🚀 Validator Setup Guide
 
-Bu adımlar, zinciri **İLK KEZ** başlatacak olan yönetici içindir.
+Follow these steps to deploy your node and sync with the ZugChain network.
 
-### Adım 1: Repoyu İndirin ve Hazırlayın
-*(Not: `KULLANICI_ADI` kısmını kendi GitHub kullanıcı adınızla değiştirin)*
+### Prerequisites
+Ensure you have the following information from the Network Administrator or Documentation:
+*   **Bootnode ENODE:** The entry point for the execution layer P2P network.
+*   **Bootstrap ENR:** The entry point for the consensus layer P2P network.
+
+### Step 1: Clone the Repository
+Clone this repository to your dedicated validator server.
 
 ```bash
-git clone https://github.com/KULLANICI_ADI/zugchain-repo.git
-cd zugchain-repo/chain
-chmod +x setup_chain.sh
+git clone https://github.com/ZugChainLabs/zugchain-validator-configs.git
+cd zugchain-validator-configs
 ```
 
-### Adım 2: Kurulumu Başlatın
-Script interaktiftir. Size validator sayısı, SSL domaini gibi sorular soracaktır.
+### Step 2: Initialize the Node
+The initialization script will detect your system architecture and configure the execution and consensus clients.
 
 ```bash
-sudo ./setup_chain.sh
-```
-
-### Adım 3: 🚨 KRİTİK - Konfigürasyon Dağıtımı
-Zincir kurulduktan sonra oluşan `genesis.json`, `config.yml` ve `genesis.ssz` dosyaları, diğer insanların ağa bağlanabilmesi için hayati önem taşır. Bu dosyaları repoya yüklemelisiniz:
-
-```bash
-# 1. Dosyaları validator klasörüne kopyalayın
-cp /opt/zugchain/config/genesis.json ../validator/config/
-cp /opt/zugchain/config/config.yml ../validator/config/
-cp /opt/zugchain/config/genesis.ssz ../validator/config/
-
-# 2. Değişiklikleri GitHub'a gönderin
-cd ..
-git add .
-git commit -m "Genesis Configs Update for New Chain Launch"
-git push origin main
-```
-> **Uyarı:** Bu adım yapılmazsa, Validator scriptleri çalışmayacaktır!
-
----
-
-## 🔗 BÖLÜM 2: Validator Kurulumu (Ağa Katılım)
-
-Mevcut çalışan ZUG Chain ağına bağlanmak isteyenler bu adımları izlemelidir.
-
-### Ön Hazırlık (Gerekli Bilgiler)
-Kuruluma başlamadan önce Master Node Sahibinden aşağıdaki bilgileri talep edin. Script kurulum sırasında bunları soracaktır:
-
-*   **Master Node IP Adresi:** (Örn: `108.61.119.204`)
-*   **Bootnode ENODE:** (`enode://...` ile başlayan uzun kod)
-*   **Bootstrap ENR:** (`enr:-...` ile başlayan kod)
-
-### Adım 1: Repoyu İndirin
-
-```bash
-git clone https://github.com/KULLANICI_ADI/zugchain-repo.git
-cd zugchain-repo/validator
+cd validator
 chmod +x join_network.sh
-```
-
-### Adım 2: Kurulumu Başlatın
-Script, işlemci mimarinizi otomatik algılar ve Master Node'a bağlanmak için gerekli ayarları yapar.
-
-```bash
 sudo ./join_network.sh
 ```
+*Follow the on-screen prompts to input the Bootnode and Bootstrap ENR information.*
 
-### Adım 3: Cüzdan Import (Validator Aktivasyonu)
-Node kurulduktan sonra, validatör cüzdan dosyalarınızı (`keystores`) sunucuya yükleyin (örneğin SFTP ile) ve aşağıdaki komutla içe aktarın:
+---
 
+## � Key Management & Activation
+
+Once your node is synchronized, you must import your validator keys to begin proposing blocks and attesting.
+
+### Step 1: Upload Keystores
+Securely transfer your `keystore-m_...` JSON files and `password.txt` to the server (e.g., via SCP or SFTP) into a secure directory.
+
+### Step 2: Import Validator Keys
+Use the specific binary for your architecture to import the keys into the validator client.
+
+**For x86_64:**
 ```bash
-# Örnek Kullanım
-/usr/local/bin/validator accounts import \
-    --keys-dir=/home/kullanici/validator_keys \
+./../bin/x86/validator accounts import \
+    --keys-dir=/path/to/uploaded_keystores \
     --wallet-dir=/opt/zugchain/data/validators
-
-# Parola soracaktır, cüzdan parolanızı girin.
 ```
 
-### Adım 4: Servisi Başlatın
-Cüzdan import işlemi başarıyla tamamlandıktan sonra validatör servisini başlatın:
+**For ARM64:**
+```bash
+./../bin/arm64/validator accounts import \
+    --keys-dir=/path/to/uploaded_keystores \
+    --wallet-dir=/opt/zugchain/data/validators
+```
+
+### Step 3: Start the Validator Service
+After successful import, start the validator process managed by systemd.
 
 ```bash
 sudo systemctl start zugchain-validator
@@ -137,59 +104,64 @@ sudo systemctl start zugchain-validator
 
 ---
 
-## 🛠 Operasyon ve Yönetim
-Node yönetimi için aşağıdaki komutları kullanabilirsiniz.
+## 🛠 Operations & Monitoring
 
-### Servis Durumlarını Kontrol Etme
+We recommend proactively monitoring your node to avoid slashing penalties due to downtime.
+
+### Service Status
+Check the status of the three core services:
 
 ```bash
-# Execution Layer (Geth - Blok İşleme)
+# Execution Layer (Geth)
 systemctl status zugchain-geth
 
-# Consensus Layer (Beacon Chain - P2P ve Senkronizasyon)
+# Consensus Layer (Beacon Chain)
 systemctl status zugchain-beacon
 
-# Validator Client (Onaylama ve İmza)
+# Validator Client
 systemctl status zugchain-validator
 ```
 
-### Logları İzleme (Hata Ayıklama)
+### Real-time Logs
+View live logs to debug issues or verify synchronization.
 
 ```bash
-# Geth Logları (Canlı Akış)
+# Execution Logs
 journalctl -fu zugchain-geth
 
-# Beacon Logları (Peer sayısı, senkronizasyon vb.)
+# Consensus Logs (Check Peer Count & Sync Status)
 journalctl -fu zugchain-beacon
 
-# Validator Logları (Ödül, Attestation vb.)
+# Validator Logs (Check Attestations & Proposals)
 journalctl -fu zugchain-validator
 ```
 
-### Servisleri Durdurma/Yeniden Başlatma
+### Service Management
+To restart the entire stack safely:
 
 ```bash
-# Hepsini durdur
-sudo systemctl stop zugchain-geth zugchain-beacon zugchain-validator
-
-# Hepsini yeniden başlat
 sudo systemctl restart zugchain-geth zugchain-beacon zugchain-validator
 ```
 
 ---
 
-## ❓ Sorun Giderme
+## ❓ Troubleshooting
 
-### 1. "Peer Sayısı 0 Görünüyor"
-*   Portların açık olduğundan emin olun: `30303` (TCP/UDP), `13000` (TCP), `12000` (UDP).
-*   Master Node'un `BOOTNODE_ENODE` adresinin doğru girildiğini kontrol edin.
-*   Zaman senkronizasyonunu kontrol edin: `sudo timedatectl set-ntp on`.
+### 1. Peer Count is Zero or Low
+*   Ensure firewall ports are open:
+    *   **30303** (TCP/UDP) - Execution P2P
+    *   **13000** (TCP) - Consensus P2P
+    *   **12000** (UDP) - Consensus P2P
+*   Verify the `Bootnode` address in `/opt/zugchain/config/config.toml`.
 
-### 2. "Genesis Hash Mismatch" Hatası
-*   Master Node sahibi config dosyalarını güncellememiş olabilir. Repoyu silip (`rm -rf zugchain-repo`) yeniden çekin (`git clone`).
+### 2. "Genesis Hash Mismatch"
+*   This indicates your configuration files are outdated.
+*   **Solution**: Pull the latest changes from the repository (`git pull`) and re-run the setup script.
 
-### 3. "Permission Denied" Hatası
-*   Scriptleri `sudo` ile çalıştırdığınızdan emin olun.
+### 3. Validator "Waiting for beacon chain to sync"
+*   The validator client cannot operate until the Beacon Chain is fully synchronized.
+*   Check sync status via `journalctl -fu zugchain-beacon`. Once synced, the validator will automatically begin its duties.
 
-### 4. Validator "Waiting for beacon chain" diyor
-*   Beacon Chain henüz senkronize olmamış olabilir. `journalctl -fu zugchain-beacon` ile senkronizasyon durumunu kontrol edin. Beacon hazır olduğunda validator otomatik başlayacaktır.
+---
+
+**ZugChain Labs** - *Powering the Future of Decentralized Finance.*
