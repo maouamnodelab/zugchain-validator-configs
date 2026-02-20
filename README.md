@@ -23,7 +23,7 @@ Ideally suited for high-availability environments, ZugChain validators require r
 | Component | Minimum Specification | Recommended (Production) |
 | :--- | :--- | :--- |
 | **CPU** | 4 Cores | 8 Cores (AMD Ryzen 7000+ / Intel Xeon / Apple M-Series) |
-| **RAM** | 16 GB | 32 GB+ DDR5 |
+| **RAM** | 8 GB | 32 GB+ DDR5 |
 | **Storage** | 500 GB SSD | 2 TB NVMe SSD (High IOPS required) |
 | **OS** | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
 | **Network** | 100 Mbps Up/Down | 1 Gbps Fiber (Static IP Required) |
@@ -57,6 +57,7 @@ Failure to open these ports will result in **zero peers** and the node will not 
 | **30303** | TCP & UDP | Execution (Geth) | P2P Peering (Required for Sync) |
 | **13000** | TCP | Consensus (Beacon) | P2P Peering (Required for Attestations) |
 | **12000** | UDP | Consensus (Beacon) | P2P Discovery (Required for Sync) |
+| **3500** | TCP | API (Lighthouse) | API (Required for Validator) |
 
 
 
@@ -64,6 +65,7 @@ Failure to open these ports will result in **zero peers** and the node will not 
 ```bash
 sudo ufw allow 30303
 sudo ufw allow 13000/tcp
+sudo ufw allow 3500/tcp
 sudo ufw allow 12000/udp
 sudo ufw enable
 ```
