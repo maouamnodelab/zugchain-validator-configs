@@ -297,16 +297,26 @@ sudo systemctl restart zugchain-geth zugchain-beacon zugchain-validator
 
 ### 1. "I have 0 Peers" or my peer count is very low
 * Your firewall is almost certainly blocking connections.
-* Double-check that ports **30303** (TCP/UDP), **13000** (TCP), and **12000** (UDP) are open on **both** Ubuntu `ufw` AND your cloud provider's web dashboard.
+* Double-check that ports **30303** (TCP/UDP), **13000** (TCP), **12000** (UDP), and **3500** (TCP) are open on **both** Ubuntu `ufw` AND your cloud provider's web dashboard.
 
 ### 2. "Genesis Hash Mismatch" Error
 * This means your configuration files are outdated compared to the rest of the network.
 * **Fix**: Pull the latest code by running `git pull` from the `zugchain-validator-configs` directory, then re-run the `join_network.sh` script.
 
-### 3. Validator logs say: "Waiting for beacon chain to sync"
-* This is perfectly normal! The validator cannot do its job until the Beacon Chain has downloaded the entire history of the blockchain.
-* Just be patient. Keep an eye on the beacon logs (`journalctl -fu zugchain-beacon`). Once the sync reaches 100%, your validator will automatically start working.
+### 3. Sync Warnings in Beacon or Validator Logs
+During the initial synchronization process, you might see warning or error messages in your logs. This is perfectly normal! The validator and beacon node cannot do their jobs until the blockchain history is fully downloaded.
+
+* **In Beacon Logs:** You might see `WARN execution: Execution client is not syncing` or `ERROR execution: Beacon node is not respecting the follow distance. EL client is syncing. lastBlockNumber=0`
+* **In Validator Logs:** You might see `WARN fallback: No responsive beacon node found tried=[127.0.0.1:4000]` or `Waiting for beacon chain to sync`
+
+**Action:** Just be patient and wait for the sync to complete. Keep an eye on the beacon logs (`journalctl -fu zugchain-beacon | ccze -A`). Once the sync reaches 100%, your validator will automatically start working and these messages will disappear.
+
+### 4. Still Having Issues?
+* First, please **re-read this entire guide from the beginning meticulously.** Most issues arise from missed steps or typos.
+* If you are absolutely sure you have followed every step correctly and are still experiencing unexpected errors, please reach out to our core development team.
+* **Join our Discord and open a Support Ticket:** [https://discord.com/invite/dV2sQtnQEu](https://discord.com/invite/dV2sQtnQEu)
 
 ---
 
 **ZugChain Labs** • *Powering the Future of Decentralized Finance.*
+
