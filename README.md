@@ -311,7 +311,12 @@ During the initial synchronization process, you might see warning or error messa
 
 **Action:** Just be patient and wait for the sync to complete. Keep an eye on the beacon logs (`journalctl -fu zugchain-beacon | ccze -A`). Once the sync reaches 100%, your validator will automatically start working and these messages will disappear.
 
-### 4. Still Having Issues?
+### 4. "No active validator keys provided" or "Waiting for deposit to be observed"
+* If you see validator logs like `WARN client: No active validator keys provided. Waiting until next epoch to check again...` or `INFO client: Waiting for deposit to be observed by beacon node pubkey=0x... status=UNKNOWN_STATUS`.
+* This means your validator node is running perfectly, but it has not been activated yet because the required deposit has not been made or recognized by the network.
+* **Action:** Go to the [ZugChain Testnet Launchpad](https://testnet.zugchain.org/launchpad) and follow the steps there to complete your deposit transaction. After completing the actual deposit, you must wait for the network to process and recognize it before your validator becomes active.
+
+### 5. Still Having Issues?
 * First, please **re-read this entire guide from the beginning meticulously.** Most issues arise from missed steps or typos.
 * If you are absolutely sure you have followed every step correctly and are still experiencing unexpected errors, please reach out to our core development team.
 * **Join our Discord and open a Support Ticket:** [https://discord.com/invite/dV2sQtnQEu](https://discord.com/invite/dV2sQtnQEu)
@@ -319,4 +324,5 @@ During the initial synchronization process, you might see warning or error messa
 ---
 
 **ZugChain Labs** • *Powering the Future of Decentralized Finance.*
+
 
