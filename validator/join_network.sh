@@ -16,11 +16,11 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # --- CURRENT NETWORK INFO (FROM MASTER) ---
-BOOTSTRAP_NODE="enr:-Mq4QIbR8W918FBeVJ3zfIdE2jpuQVaMJPM4bCgOvZP1Uzu3Cvo0gTukq4Nl4l35G_dRHJVtAY_Bz0xdbSvB6tzbXC-GAZx1hGLGh2F0dG5ldHOIAAAADAAAAACEZXRoMpCBoWmuIAAABABMBgAAAAAAgmlkgnY0gmlwhBTlAJmEcXVpY4IyyIlzZWNwMjU2azGhAq2Rz_mwrG5IiWLrarg3VwKJo4oyWOJEkyh43fm7t_woiHN5bmNuZXRzD4N0Y3CCMsiDdWRwgi7g"
+BOOTSTRAP_NODE="enr:-Mq4QOamV_ukdllbpM1N9Iv7DqqThInkM_9OesfnbJSJRqO-EBz4zZyqT7-fEj4doxSrxv76kJNMsngETyKE4bhNw1SGAZx1hGLNh2F0dG5ldHOIAAAAAAAAADCEZXRoMpCBoWmuIAAABABMBgAAAAAAgmlkgnY0gmlwhBTlAJmEcXVpY4IyyIlzZWNwMjU2azGhAq2Rz_mwrG5IiWLrarg3VwKJo4oyWOJEkyh43fm7t_woiHN5bmNuZXRzD4N0Y3CCMsiDdWRwgi7g"
 BOOTNODE_ENODE="enode://ebf01cb7db4ede4320918fb2ad7e16a0a4d3f2229c68cb4f4b636b99e03d4a36405dfcd5567f43b6560e2d902cde9f0af8c6d0246f33c77ca35aead68aa1e42f@20.229.0.153:30303"
 # --- INTERACTIVE INPUT ---
 echo -e "${GREEN}>>> Welcome to ZUG Chain Validator Installation.${NC}"
-echo ""
+echo "" 
 echo -e "${YELLOW}>>> Please enter the wallet address to receive Block Rewards (Fee Recipient):${NC}"
 read -p "Wallet Address [Default: 0x98CE9...]: " USER_FEE_RECIPIENT
 
