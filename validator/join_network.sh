@@ -20,7 +20,7 @@ BOOTSTRAP_NODE="enr:-Mq4QOamV_ukdllbpM1N9Iv7DqqThInkM_9OesfnbJSJRqO-EBz4zZyqT7-f
 BOOTNODE_ENODE="enode://ebf01cb7db4ede4320918fb2ad7e16a0a4d3f2229c68cb4f4b636b99e03d4a36405dfcd5567f43b6560e2d902cde9f0af8c6d0246f33c77ca35aead68aa1e42f@20.229.0.153:30303"
 # --- INTERACTIVE INPUT ---
 echo -e "${GREEN}>>> Welcome to ZUG Chain Validator Installation.${NC}"
-echo "" 
+echo ""
 echo -e "${YELLOW}>>> Please enter the wallet address to receive Block Rewards (Fee Recipient):${NC}"
 read -p "Wallet Address [Default: 0x98CE9...]: " USER_FEE_RECIPIENT
 
@@ -123,7 +123,10 @@ ExecStart=/usr/local/bin/beacon-chain \\
     --execution-endpoint=http://127.0.0.1:8551 \\
     --jwt-secret=${ZUG_DIR}/data/jwt.hex \\
     --accept-terms-of-use \\
+    --rpc-host=0.0.0.0 \\
     --rpc-port=4000 \\
+    --grpc-gateway-host=0.0.0.0 \\
+    --grpc-gateway-port=3500 \\
     --p2p-host-ip=${PUBLIC_IP} \\
     --p2p-tcp-port=13000 \\
     --p2p-udp-port=12000 \\
