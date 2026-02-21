@@ -1,4 +1,4 @@
-# ⚡ ZugChain Validator Deployment Suite (Enterprise Edition)
+# ZugChain Validator Deployment Suite (Enterprise Edition)
 
 > [!WARNING]  
 > **Linux Exclusivity**  
@@ -73,6 +73,14 @@ sudo ufw enable
 ---
 
 ## 🚀 Step-by-Step Setup Guide
+
+> [!WARNING]
+> **Clean Machine Required!**  
+> Do **NOT** install this on a server that is already running an Ethereum Mainnet Validator node (or any other network). Doing so can cause severe file conflicts, database corruption, and lead to your ETH node malfunctioning. Unless you are a highly experienced DevOps engineer, you **must** use a fresh, clean Linux installation for your ZugChain Validator.
+
+> [!NOTE]
+> **Fully Automated Setup**
+> You **ONLY** need to install `geth` manually (Step 1). The rest of the process is fully automated. Our initialization script (`join_network.sh`) automatically handles downloading and configuring all custom ZugChain consensus binaries. No other manual software installations or external downloads are required!
 
 Follow these simple steps in order. Take your time and make sure each step completes successfully before moving to the next one.
 
